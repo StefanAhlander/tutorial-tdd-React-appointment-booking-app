@@ -1,30 +1,36 @@
 {
   "name": "appointments",
   "version": "1.0.0",
-  "description": "appointments booking app",
-  "private": true,
+  "description": "Appointments system",
   "main": "index.js",
   "scripts": {
-    "test": "jest --watchAll --coverage",
-    "build": "webpack"
+    "build": "webpack",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "example.com"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@babel/plugin-transform-runtime": "^7.10.3",
-    "@babel/preset-env": "^7.10.3",
-    "@babel/preset-react": "^7.10.1",
-    "@babel/runtime": "^7.10.3",
-    "babel-loader": "^8.1.0",
-    "jest": "^26.0.1",
-    "webpack": "^4.43.0",
-    "webpack-cli": "^3.3.12"
+    "@babel/plugin-transform-runtime": "^7.3.4",
+    "@babel/preset-env": "^7.3.4",
+    "@babel/preset-react": "^7.0.0",
+    "babel-loader": "^8.0.5",
+    "faker": "^4.1.0",
+    "jest": "^24.1.0",
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.2.3"
   },
   "dependencies": {
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1"
+    "@babel/runtime": "^7.3.4",
+    "react": "^16.9.0-alpha.0",
+    "react-dom": "^16.9.0-alpha.0"
   },
-  "jest": {
-    "testEnvironment": "jsdom"
+  "prettier": {
+    "singleQuote": true,
+    "printWidth": 67,
+    "jsxBracketSameLine": true
   }
 }

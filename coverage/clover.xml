@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1592816862291" clover="3.2.0">
-  <project timestamp="1592816862291" name="All files">
+<coverage generated="1592821387838" clover="3.2.0">
+  <project timestamp="1592821387838" name="All files">
     <metrics statements="20" coveredstatements="20" conditionals="4" coveredconditionals="4" methods="11" coveredmethods="11" elements="35" coveredelements="35" complexity="0" loc="20" ncloc="20" packages="2" files="3" classes="3"/>
     <package name="src">
       <metrics statements="16" coveredstatements="16" conditionals="4" coveredconditionals="4" methods="9" coveredmethods="9"/>
@@ -20,11 +20,11 @@
       <file name="CustomerForm.js" path="C:\projects\test-examples\appointments\src\CustomerForm.js">
         <metrics statements="6" coveredstatements="6" conditionals="0" coveredconditionals="0" methods="4" coveredmethods="4"/>
         <line num="3" count="1" type="stmt"/>
-        <line num="4" count="8" type="stmt"/>
-        <line num="6" count="8" type="stmt"/>
-        <line num="7" count="1" type="stmt"/>
-        <line num="12" count="8" type="stmt"/>
-        <line num="13" count="2" type="stmt"/>
+        <line num="9" count="23" type="stmt"/>
+        <line num="15" count="23" type="stmt"/>
+        <line num="16" count="3" type="stmt"/>
+        <line num="21" count="23" type="stmt"/>
+        <line num="22" count="6" type="stmt"/>
       </file>
     </package>
     <package name="test">
@@ -32,9 +32,9 @@
       <file name="domManipulators.js" path="C:\projects\test-examples\appointments\test\domManipulators.js">
         <metrics statements="4" coveredstatements="4" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="2"/>
         <line num="3" count="1" type="stmt"/>
-        <line num="4" count="7" type="stmt"/>
-        <line num="6" count="7" type="stmt"/>
-        <line num="7" count="7" type="stmt"/>
+        <line num="4" count="20" type="stmt"/>
+        <line num="6" count="20" type="stmt"/>
+        <line num="7" count="20" type="stmt"/>
       </file>
     </package>
   </project>
