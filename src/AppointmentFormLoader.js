@@ -3,6 +3,7 @@ import { AppointmentForm } from './AppointmentForm';
 
 export const AppointmentFormLoader = props => {
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
+
   useEffect(() => {
     const fetchAvailableTimeSlots = async () => {
       const result = await window.fetch('/availableTimeSlots', {
@@ -12,10 +13,14 @@ export const AppointmentFormLoader = props => {
       });
       setAvailableTimeSlots(await result.json());
     };
+
     fetchAvailableTimeSlots();
   }, []);
 
   return (
-    <AppointmentForm {...props} availableTimeSlots={availableTimeSlots} />
+    <AppointmentForm
+      {...props}
+      availableTimeSlots={availableTimeSlots}
+    />
   );
 };

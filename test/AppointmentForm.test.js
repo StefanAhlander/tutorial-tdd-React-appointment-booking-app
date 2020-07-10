@@ -83,9 +83,10 @@ describe('AppointmentForm', () => {
     window.fetch.mockReturnValue(fetchResponseOk({}));
     const saveSpy = jest.fn();
 
-    render(<AppointmentForm onSave={saveSpy} customer={customer} />);
+    render(
+      <AppointmentForm onSave={saveSpy} customer={customer} />
+    );
     await submit(form('appointment'));
-
     expect(saveSpy).toHaveBeenCalled();
   });
 
@@ -93,7 +94,9 @@ describe('AppointmentForm', () => {
     window.fetch.mockReturnValue(fetchResponseError());
     const saveSpy = jest.fn();
 
-    render(<AppointmentForm onSave={saveSpy} customer={customer} />);
+    render(
+      <AppointmentForm onSave={saveSpy} customer={customer} />
+    );
     await submit(form('appointment'));
 
     expect(saveSpy).not.toHaveBeenCalled();
@@ -135,14 +138,11 @@ describe('AppointmentForm', () => {
 
   it('passes the customer id to fetch when submitting', async () => {
     render(<AppointmentForm customer={customer} />);
-
     await submit(form('appointment'));
-
-    expect(requestBodyOf(window.fetch)).toMatchObject(
-      { customer: customer.id }
-    );
+    expect(requestBodyOf(window.fetch)).toMatchObject({
+      customer: customer.id
+    });
   });
-
 
   const itRendersAsASelectBox = fieldName => {
     it('renders as a select box', () => {

@@ -10,7 +10,7 @@ describe('AppointmentFormLoader', () => {
 
   const today = new Date();
   const availableTimeSlots = [
-    { startsAt: today.setHours(9, 0, 0, 0) }
+    { when: today.setHours(9, 0, 0, 0) }
   ];
 
   beforeEach(() => {
@@ -30,6 +30,7 @@ describe('AppointmentFormLoader', () => {
 
   it('fetches data when component is mounted', async () => {
     await renderAndWait(<AppointmentFormLoader />);
+
     expect(window.fetch).toHaveBeenCalledWith(
       '/availableTimeSlots',
       expect.objectContaining({
@@ -43,7 +44,9 @@ describe('AppointmentFormLoader', () => {
   it('initially passes no data to AppointmentForm', async () => {
     await renderAndWait(<AppointmentFormLoader />);
 
-    expect(AppointmentFormExports.AppointmentForm).toHaveBeenCalledWith(
+    expect(
+      AppointmentFormExports.AppointmentForm
+    ).toHaveBeenCalledWith(
       { availableTimeSlots: [] },
       expect.anything()
     );
@@ -52,7 +55,9 @@ describe('AppointmentFormLoader', () => {
   it('displays time slots that are fetched on mount', async () => {
     await renderAndWait(<AppointmentFormLoader />);
 
-    expect(AppointmentFormExports.AppointmentForm).toHaveBeenLastCalledWith(
+    expect(
+      AppointmentFormExports.AppointmentForm
+    ).toHaveBeenLastCalledWith(
       { availableTimeSlots },
       expect.anything()
     );
@@ -61,13 +66,11 @@ describe('AppointmentFormLoader', () => {
   it('passes props through to children', async () => {
     await renderAndWait(<AppointmentFormLoader testProp={123} />);
 
-    expect(AppointmentFormExports.AppointmentForm)
-      .toHaveBeenCalledWith(
-        expect.objectContaining({ testProp: 123 }),
-        expect.anything()
-      );
+    expect(
+      AppointmentFormExports.AppointmentForm
+    ).toHaveBeenCalledWith(
+      expect.objectContaining({ testProp: 123 }),
+      expect.anything()
+    );
   });
-
-
-
 });

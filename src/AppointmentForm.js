@@ -171,8 +171,8 @@ export const AppointmentForm = ({
 
   const timeSlotsForStylist = appointment.stylist
     ? availableTimeSlots.filter(slot =>
-      slot.stylists.includes(appointment.stylist)
-    )
+        slot.stylists.includes(appointment.stylist)
+      )
     : availableTimeSlots;
 
   return (
@@ -238,5 +238,5 @@ AppointmentForm.defaultProps = {
     'Cut & beard trim': ['Pat', 'Sam'],
     Extensions: ['Ashley', 'Pat']
   },
-  onSave: () => { }
+  onSave: () => {}
 };

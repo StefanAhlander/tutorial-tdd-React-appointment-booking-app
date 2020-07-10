@@ -4,6 +4,9 @@ const Error = () => (
   <div className="error">An error occurred during save.</div>
 );
 
+const required = description => value =>
+  !value || value.trim() === '' ? description : undefined;
+
 export const CustomerForm = ({
   firstName,
   lastName,
@@ -17,6 +20,33 @@ export const CustomerForm = ({
     lastName,
     phoneNumber
   });
+
+  const [validationErrors, setValidationErrors] = useState({});
+
+  const handleBlur = ({ target }) => {
+    const validators = {
+      firstName: required('First name is required'),
+      lastName: required('Last name is required')
+    };
+    const result = validators[target.name](target.value);
+    setValidationErrors({
+      ...validationErrors,
+      [target.name]: result
+    });
+  };
+
+  const hasError = fieldName =>
+    validationErrors[fieldName] !== undefined;
+
+  const renderError = fieldName => {
+    if (hasError(fieldName)) {
+      return (
+        <span className='error'>
+          {validationErrors[fieldName]}
+        </span>
+      );
+    }
+  };
 
   const handleChange = ({ target }) =>
     setCustomer(customer => ({
@@ -51,7 +81,9 @@ export const CustomerForm = ({
         id="firstName"
         value={firstName}
         onChange={handleChange}
+        onBlur={handleBlur}
       />
+      {renderError('firstName')}
 
       <label htmlFor="lastName">Last name</label>
       <input
@@ -60,7 +92,9 @@ export const CustomerForm = ({
         id="lastName"
         value={lastName}
         onChange={handleChange}
+        onBlur={handleBlur}
       />
+      {renderError('lastName')}
 
       <label htmlFor="phoneNumber">Phone number</label>
       <input
@@ -77,5 +111,5 @@ export const CustomerForm = ({
 };
 
 CustomerForm.defaultProps = {
-  onSave: () => {}
+  onSave: () => { }
 };

@@ -4,10 +4,10 @@ import { createContainer } from './domManipulators';
 import { fetchResponseOk } from './spyHelpers';
 import { AppointmentsDayViewLoader } from '../src/AppointmentsDayViewLoader';
 import * as AppointmentsDayViewExports from '../src/AppointmentsDayView';
-import { render } from 'react-dom';
 
 describe('AppointmentsDayViewLoader', () => {
   let renderAndWait, container;
+
   const today = new Date();
   const appointments = [
     { startsAt: today.setHours(9, 0, 0, 0) },
@@ -29,10 +29,13 @@ describe('AppointmentsDayViewLoader', () => {
     AppointmentsDayViewExports.AppointmentsDayView.mockRestore();
   });
 
-  it('fetches appointments happening today when component is mounted', async () => {
+  it('fetches data when component is mounted', async () => {
     const from = today.setHours(0, 0, 0, 0);
     const to = today.setHours(23, 59, 59, 999);
-    await renderAndWait(<AppointmentsDayViewLoader />);
+
+    await renderAndWait(
+      <AppointmentsDayViewLoader today={today} />
+    );
 
     expect(window.fetch).toHaveBeenCalledWith(
       `/appointments/${from}-${to}`,
@@ -58,20 +61,28 @@ describe('AppointmentsDayViewLoader', () => {
   it('displays time slots that are fetched on mount', async () => {
     await renderAndWait(<AppointmentsDayViewLoader />);
 
-    expect(AppointmentsDayViewExports.AppointmentsDayView).toHaveBeenLastCalledWith(
-      { appointments },
+    expect(
+      AppointmentsDayViewExports.AppointmentsDayView
+    ).toHaveBeenLastCalledWith(
+      {
+        appointments
+      },
       expect.anything()
     );
   });
 
-  it('re-requests appointments when today prop changes', async () => {
+  it('re-requests appointment when today prop changes', async () => {
     const tomorrow = new Date(today);
     tomorrow.setHours(24);
     const from = tomorrow.setHours(0, 0, 0, 0);
     const to = tomorrow.setHours(23, 59, 59, 999);
 
-    await renderAndWait(<AppointmentsDayViewLoader today={today} />);
-    await renderAndWait(<AppointmentsDayViewLoader today={tomorrow} />);
+    await renderAndWait(
+      <AppointmentsDayViewLoader today={today} />
+    );
+    await renderAndWait(
+      <AppointmentsDayViewLoader today={tomorrow} />
+    );
 
     expect(window.fetch).toHaveBeenLastCalledWith(
       `/appointments/${from}-${to}`,
@@ -79,6 +90,9 @@ describe('AppointmentsDayViewLoader', () => {
     );
   });
 
-
-
+  it('calls window.fetch just once', async () => {
+    await renderAndWait(<AppointmentsDayViewLoader />);
+    await renderAndWait(<AppointmentsDayViewLoader />);
+    expect(window.fetch.mock.calls.length).toBe(1);
+  });
 });
