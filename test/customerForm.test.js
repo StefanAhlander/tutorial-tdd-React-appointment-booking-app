@@ -9,6 +9,12 @@ import { createContainer, withEvent } from './domManipulators';
 import { CustomerForm } from '../src/CustomerForm';
 import { act } from 'react-dom/test-utils';
 
+const validCustomer = {
+  firstName: 'first',
+  lastName: 'last',
+  phoneNumber: '123456789'
+};
+
 describe('CustomerForm', () => {
   let render,
     container,
@@ -53,7 +59,7 @@ describe('CustomerForm', () => {
   });
 
   it('calls fetch with the right properties when submitting data', async () => {
-    render(<CustomerForm />);
+    render(<CustomerForm {...validCustomer} />);
 
     await submit(form('customer'));
     expect(window.fetch).toHaveBeenCalledWith(
@@ -71,7 +77,7 @@ describe('CustomerForm', () => {
     window.fetch.mockReturnValue(fetchResponseOk(customer));
     const saveSpy = jest.fn();
 
-    render(<CustomerForm onSave={saveSpy} />);
+    render(<CustomerForm {...validCustomer} onSave={saveSpy} />);
     await submit(form('customer'));
 
     expect(saveSpy).toHaveBeenCalledWith(customer);
@@ -81,7 +87,7 @@ describe('CustomerForm', () => {
     window.fetch.mockReturnValue(fetchResponseError());
     const saveSpy = jest.fn();
 
-    render(<CustomerForm onSave={saveSpy} />);
+    render(<CustomerForm {...validCustomer} onSave={saveSpy} />);
     await submit(form('customer'));
 
     expect(saveSpy).not.toHaveBeenCalled();
@@ -90,7 +96,7 @@ describe('CustomerForm', () => {
   it('prevents the default action when submitting the form', async () => {
     const preventDefaultSpy = jest.fn();
 
-    render(<CustomerForm />);
+    render(<CustomerForm {...validCustomer} />);
     await submit(form('customer'), {
       preventDefault: preventDefaultSpy
     });
@@ -101,7 +107,7 @@ describe('CustomerForm', () => {
   it('renders error message when fetch call fails', async () => {
     window.fetch.mockReturnValue(fetchResponseError());
 
-    render(<CustomerForm />);
+    render(<CustomerForm {...validCustomer} />);
     await submit(form('customer'));
 
     expect(element('.error')).not.toBeNull();
@@ -114,7 +120,7 @@ describe('CustomerForm', () => {
     window.fetch.mockReturnValueOnce(fetchResponseError());
     window.fetch.mockReturnValue(fetchResponseOk());
 
-    render(<CustomerForm />);
+    render(<CustomerForm {...validCustomer} />);
     await submit(form('customer'));
     await submit(form('customer'));
 
@@ -154,7 +160,7 @@ describe('CustomerForm', () => {
 
   const itSubmitsExistingValue = (fieldName, value) =>
     it('saves existing value when submitted', async () => {
-      render(<CustomerForm {...{ [fieldName]: value }} />);
+      render(<CustomerForm {...validCustomer} {...{ [fieldName]: value }} />);
 
       await submit(form('customer'));
 
@@ -166,18 +172,34 @@ describe('CustomerForm', () => {
   const itSubmitsNewValue = (fieldName, value) =>
     it('saves new value when submitted', async () => {
       render(
-        <CustomerForm {...{ [fieldName]: 'existingValue' }} />
+        <CustomerForm {...validCustomer} {...{ [fieldName]: 'existingValue' }} />
       );
       change(
         field('customer', fieldName),
         withEvent(fieldName, value)
       );
+
       await submit(form('customer'));
 
       expect(requestBodyOf(window.fetch)).toMatchObject({
         [fieldName]: value
       });
     });
+
+  it('does not submit the form when there are validation errors', async () => {
+    render(<CustomerForm />);
+
+    await submit(form('customer'));
+
+    expect(window.fetch).not.toHaveBeenCalled();
+  });
+
+  it('renders validation errors after submission fails', async () => {
+    render(<CustomerForm />);
+    await submit(form('customer'));
+    expect(window.fetch).not.toHaveBeenCalled();
+    expect(element('.error')).not.toBeNull();
+  });
 
   describe('first name field', () => {
     itRendersAsATextBox('firstName');
@@ -238,6 +260,28 @@ describe('CustomerForm', () => {
     'Last name is required'
   );
 
+  itInvalidatesFieldWithValue(
+    'phoneNumber',
+    ' ',
+    'Phone number is required'
+  );
+
+  itInvalidatesFieldWithValue(
+    'phoneNumber',
+    'invalid',
+    'Only numbers, spaces and these symbols are allowed: ( ) + -'
+  );
+
+  it('accepts standard phone number characters when validating', () => {
+    render(<CustomerForm />);
+
+    blur(
+      element('[name="phoneNumber"'),
+      withEvent('phoneNumber', '0123456789+()- ')
+    );
+
+    expect(element('.error')).toBeNull();
+  });
 
 
 
