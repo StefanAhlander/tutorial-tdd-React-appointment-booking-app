@@ -19,6 +19,8 @@ export const CustomerForm = ({
     phoneNumber
   });
 
+  const [submitting, setSubmitting] = useState(false);
+
   const [validationErrors, setValidationErrors] = useState({});
 
   const validators = {
@@ -57,16 +59,21 @@ export const CustomerForm = ({
     e.preventDefault();
     const validationResults = validateMany(validators, customer);
     if (!anyErrors(validationResults)) {
+      setSubmitting(true);
       const result = await window.fetch('/customers', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(customer)
       });
+      setSubmitting(false);
       if (result.ok) {
         setError(false);
         const customerWithId = await result.json();
         onSave(customerWithId);
+      } else if (result.status === 422) {
+        const response = await result.json();
+        setValidationErrors(response.errors);
       } else {
         setError(true);
       }
@@ -112,6 +119,8 @@ export const CustomerForm = ({
       {renderError('phoneNumber')}
 
       <input type="submit" value="Add" />
+
+      {submitting && <span className="submittingIndicator" />}
     </form>
   );
 };

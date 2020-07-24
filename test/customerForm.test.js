@@ -7,7 +7,7 @@ import {
 } from './spyHelpers';
 import { createContainer, withEvent } from './domManipulators';
 import { CustomerForm } from '../src/CustomerForm';
-import { act } from 'react-dom/test-utils';
+import ReactTestUtils, { act } from 'react-dom/test-utils';
 
 const validCustomer = {
   firstName: 'first',
@@ -125,6 +125,20 @@ describe('CustomerForm', () => {
     await submit(form('customer'));
 
     expect(element('.error')).toBeNull();
+  });
+
+  it('renders field validation errors from server', async () => {
+    const errors = {
+      phoneNumber: 'Phone number already exists in the system'
+    };
+    window.fetch.mockReturnValue(
+      fetchResponseError(422, { errors })
+    );
+    render(<CustomerForm {...validCustomer} />);
+
+    await submit(form('customer'));
+
+    expect(element('.error').textContent).toMatch(errors.phoneNumber);
   });
 
   const expectToBeInputFieldOfTypeText = formElement => {
@@ -283,6 +297,25 @@ describe('CustomerForm', () => {
     expect(element('.error')).toBeNull();
   });
 
+  it('displays indicator when the form is submitting', async () => {
+    render(<CustomerForm {...validCustomer} />);
+    act(() => {
+      ReactTestUtils.Simulate.submit(form('customer'));
+    });
+    await act(async () => {
+      expect(element('span.submittingIndicator')).not.toBeNull();
+    });
+  });
 
+  it('initially does not display the submitting indicator', () => {
+    render(<CustomerForm {...validCustomer} />);
+    expect(element('.submittingIndicator')).toBeNull();
+  });
+
+  it('hides indicator when form has submitted', async () => {
+    render(<CustomerForm {...validCustomer} />);
+    await submit(form('customer'));
+    expect(element('.submittingIndicator')).toBeNull();
+  });
 
 });
