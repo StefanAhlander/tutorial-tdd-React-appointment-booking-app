@@ -2,9 +2,7 @@ import ShallowRenderer from 'react-test-renderer/shallow';
 
 export const id = id => element =>
   element.props && element.props.id === id;
-
 export const type = type => element => element.type === type;
-
 export const className = className => element =>
   element.props.className === className;
 

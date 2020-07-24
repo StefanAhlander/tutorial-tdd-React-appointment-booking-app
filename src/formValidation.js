@@ -1,4 +1,3 @@
-
 export const required = description => value =>
   !value || value.trim() === '' ? description : undefined;
 
@@ -11,12 +10,6 @@ export const list = (...validators) => value =>
     undefined
   );
 
-export const hasError = (validationErrors, fieldName) =>
-  validationErrors[fieldName] !== undefined;
-
-export const anyErrors = errors =>
-  Object.values(errors).some(error => error !== undefined);
-
 export const validateMany = (validators, fields) =>
   Object.entries(fields).reduce(
     (result, [name, value]) => ({
@@ -25,3 +18,9 @@ export const validateMany = (validators, fields) =>
     }),
     {}
   );
+
+export const hasError = (validationErrors, fieldName) =>
+  validationErrors[fieldName] !== undefined;
+
+export const anyErrors = errors =>
+  Object.values(errors).some(error => error !== undefined);

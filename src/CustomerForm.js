@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { required, match, list, hasError, anyErrors, validateMany } from './formValidation';
+import {
+  required,
+  match,
+  list,
+  hasError,
+  validateMany,
+  anyErrors
+} from './formValidation';
 
 const Error = () => (
   <div className="error">An error occurred during save.</div>
@@ -11,6 +18,8 @@ export const CustomerForm = ({
   phoneNumber,
   onSave
 }) => {
+  const [submitting, setSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
   const [error, setError] = useState(false);
 
   const [customer, setCustomer] = useState({
@@ -19,66 +28,76 @@ export const CustomerForm = ({
     phoneNumber
   });
 
-  const [submitting, setSubmitting] = useState(false);
-
-  const [validationErrors, setValidationErrors] = useState({});
+  const handleChange = ({ target }) => {
+    setCustomer(customer => ({
+      ...customer,
+      [target.name]: target.value
+    }));
+    if (hasError(validationErrors, target.name)) {
+      validateSingleField(target.name, target.value);
+    }
+  };
 
   const validators = {
     firstName: required('First name is required'),
     lastName: required('Last name is required'),
     phoneNumber: list(
       required('Phone number is required'),
-      match(/^[0-9+()\- ]*$/, 'Only numbers, spaces and these symbols are allowed: ( ) + -')
+      match(
+        /^[0-9+()\- ]*$/,
+        'Only numbers, spaces and these symbols are allowed: ( ) + -'
+      )
     )
   };
 
-  const handleBlur = ({ target }) => {
+  const validateSingleField = (fieldName, fieldValue) => {
     const result = validateMany(validators, {
-      [target.name]: target.value
+      [fieldName]: fieldValue
     });
     setValidationErrors({ ...validationErrors, ...result });
   };
 
+  const handleBlur = ({ target }) =>
+    validateSingleField(target.name, target.value);
+
   const renderError = fieldName => {
     if (hasError(validationErrors, fieldName)) {
       return (
-        <span className='error'>
+        <span className="error">
           {validationErrors[fieldName]}
         </span>
       );
     }
   };
 
-  const handleChange = ({ target }) =>
-    setCustomer(customer => ({
-      ...customer,
-      [target.name]: target.value
-    }));
+  const doSave = async () => {
+    setSubmitting(true);
+    const result = await window.fetch('/customers', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(customer)
+    });
+    setSubmitting(false);
+    if (result.ok) {
+      setError(false);
+      const customerWithId = await result.json();
+      onSave(customerWithId);
+    } else if (result.status === 422) {
+      const response = await result.json();
+      setValidationErrors(response.errors);
+    } else {
+      setError(true);
+    }
+  };
 
   const handleSubmit = async e => {
     e.preventDefault();
-    const validationResults = validateMany(validators, customer);
-    if (!anyErrors(validationResults)) {
-      setSubmitting(true);
-      const result = await window.fetch('/customers', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(customer)
-      });
-      setSubmitting(false);
-      if (result.ok) {
-        setError(false);
-        const customerWithId = await result.json();
-        onSave(customerWithId);
-      } else if (result.status === 422) {
-        const response = await result.json();
-        setValidationErrors(response.errors);
-      } else {
-        setError(true);
-      }
+    const validationResult = validateMany(validators, customer);
+    if (!anyErrors(validationResult)) {
+      await doSave();
     } else {
-      setValidationErrors(validationResults);
+      setValidationErrors(validationResult);
     }
   };
 
@@ -118,13 +137,14 @@ export const CustomerForm = ({
       />
       {renderError('phoneNumber')}
 
-      <input type="submit" value="Add" />
-
-      {submitting && <span className="submittingIndicator" />}
+      <input type="submit" value="Add" disabled={submitting} />
+      {submitting ? (
+        <span className="submittingIndicator" />
+      ) : null}
     </form>
   );
 };
 
 CustomerForm.defaultProps = {
-  onSave: () => { }
+  onSave: () => {}
 };

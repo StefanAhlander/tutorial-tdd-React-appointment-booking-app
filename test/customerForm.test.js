@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactTestUtils, { act } from 'react-dom/test-utils';
 import 'whatwg-fetch';
 import {
   fetchResponseOk,
@@ -7,7 +8,6 @@ import {
 } from './spyHelpers';
 import { createContainer, withEvent } from './domManipulators';
 import { CustomerForm } from '../src/CustomerForm';
-import ReactTestUtils, { act } from 'react-dom/test-utils';
 
 const validCustomer = {
   firstName: 'first',
@@ -47,20 +47,37 @@ describe('CustomerForm', () => {
     window.fetch.mockRestore();
   });
 
+  const submitButton = () => element('input[type="submit"]');
+
   it('renders a form', () => {
-    render(<CustomerForm />);
+    render(<CustomerForm {...validCustomer} />);
     expect(form('customer')).not.toBeNull();
   });
 
-  it('has a submit button', () => {
-    render(<CustomerForm />);
-    const submitButton = element('input[type="submit"]');
-    expect(submitButton).not.toBeNull();
+  describe('submit button', () => {
+    it('has a submit button', () => {
+      render(<CustomerForm {...validCustomer} />);
+      expect(submitButton()).not.toBeNull();
+    });
+
+    it('disables the submit button when submitting', async () => {
+      render(<CustomerForm {...validCustomer} />);
+      act(() => {
+        ReactTestUtils.Simulate.submit(form('customer'));
+      });
+      await act(async () => {
+        expect(submitButton().disabled).toBeTruthy();
+      });
+    });
+
+    it('initially does not disable submit button', () => {
+      render(<CustomerForm {...validCustomer} />);
+      expect(submitButton().disabled).toBeFalsy();
+    });
   });
 
   it('calls fetch with the right properties when submitting data', async () => {
     render(<CustomerForm {...validCustomer} />);
-
     await submit(form('customer'));
     expect(window.fetch).toHaveBeenCalledWith(
       '/customers',
@@ -127,6 +144,20 @@ describe('CustomerForm', () => {
     expect(element('.error')).toBeNull();
   });
 
+  it('does not submit the form when there are validation errors', async () => {
+    render(<CustomerForm />);
+
+    await submit(form('customer'));
+    expect(window.fetch).not.toHaveBeenCalled();
+  });
+
+  it('renders validation errors after submission fails', async () => {
+    render(<CustomerForm />);
+    await submit(form('customer'));
+    expect(window.fetch).not.toHaveBeenCalled();
+    expect(element('.error')).not.toBeNull();
+  });
+
   it('renders field validation errors from server', async () => {
     const errors = {
       phoneNumber: 'Phone number already exists in the system'
@@ -135,10 +166,33 @@ describe('CustomerForm', () => {
       fetchResponseError(422, { errors })
     );
     render(<CustomerForm {...validCustomer} />);
-
     await submit(form('customer'));
+    expect(element('.error').textContent).toMatch(
+      errors.phoneNumber
+    );
+  });
 
-    expect(element('.error').textContent).toMatch(errors.phoneNumber);
+  describe('submitting indicator', () => {
+    it('displays indicator when form is submitting', async () => {
+      render(<CustomerForm {...validCustomer} />);
+      act(() => {
+        ReactTestUtils.Simulate.submit(form('customer'));
+      });
+      await act(async () => {
+        expect(element('span.submittingIndicator')).not.toBeNull();
+      });
+    });
+
+    it('initially does not display the submitting indicator', () => {
+      render(<CustomerForm {...validCustomer} />);
+      expect(element('.submittingIndicator')).toBeNull();
+    });
+
+    it('hides indicator when form has submitted', async () => {
+      render(<CustomerForm {...validCustomer} />);
+      await submit(form('customer'));
+      expect(element('.submittingIndicator')).toBeNull();
+    });
   });
 
   const expectToBeInputFieldOfTypeText = formElement => {
@@ -149,32 +203,42 @@ describe('CustomerForm', () => {
 
   const itRendersAsATextBox = fieldName =>
     it('renders as a text box', () => {
-      render(<CustomerForm />);
+      render(<CustomerForm {...validCustomer} />);
       expectToBeInputFieldOfTypeText(field('customer', fieldName));
     });
 
   const itIncludesTheExistingValue = fieldName =>
     it('includes the existing value', () => {
-      render(<CustomerForm {...{ [fieldName]: 'value' }} />);
+      render(
+        <CustomerForm
+          {...validCustomer}
+          {...{ [fieldName]: 'value' }}
+        />
+      );
       expect(field('customer', fieldName).value).toEqual('value');
     });
 
   const itRendersALabel = (fieldName, text) =>
     it('renders a label', () => {
-      render(<CustomerForm />);
+      render(<CustomerForm {...validCustomer} />);
       expect(labelFor(fieldName)).not.toBeNull();
       expect(labelFor(fieldName).textContent).toEqual(text);
     });
 
   const itAssignsAnIdThatMatchesTheLabelId = fieldName =>
     it('assigns an id that matches the label id', () => {
-      render(<CustomerForm />);
+      render(<CustomerForm {...validCustomer} />);
       expect(field('customer', fieldName).id).toEqual(fieldName);
     });
 
   const itSubmitsExistingValue = (fieldName, value) =>
     it('saves existing value when submitted', async () => {
-      render(<CustomerForm {...validCustomer} {...{ [fieldName]: value }} />);
+      render(
+        <CustomerForm
+          {...validCustomer}
+          {...{ [fieldName]: value }}
+        />
+      );
 
       await submit(form('customer'));
 
@@ -186,34 +250,21 @@ describe('CustomerForm', () => {
   const itSubmitsNewValue = (fieldName, value) =>
     it('saves new value when submitted', async () => {
       render(
-        <CustomerForm {...validCustomer} {...{ [fieldName]: 'existingValue' }} />
+        <CustomerForm
+          {...validCustomer}
+          {...{ [fieldName]: 'existingValue' }}
+        />
       );
       change(
         field('customer', fieldName),
         withEvent(fieldName, value)
       );
-
       await submit(form('customer'));
 
       expect(requestBodyOf(window.fetch)).toMatchObject({
         [fieldName]: value
       });
     });
-
-  it('does not submit the form when there are validation errors', async () => {
-    render(<CustomerForm />);
-
-    await submit(form('customer'));
-
-    expect(window.fetch).not.toHaveBeenCalled();
-  });
-
-  it('renders validation errors after submission fails', async () => {
-    render(<CustomerForm />);
-    await submit(form('customer'));
-    expect(window.fetch).not.toHaveBeenCalled();
-    expect(element('.error')).not.toBeNull();
-  });
 
   describe('first name field', () => {
     itRendersAsATextBox('firstName');
@@ -242,80 +293,96 @@ describe('CustomerForm', () => {
     itSubmitsNewValue('phoneNumber', '67890');
   });
 
-  const itInvalidatesFieldWithValue = (
-    fieldName,
-    value,
-    description
-  ) => {
-    it(`displays error after blur when ${fieldName} field is '${value}'`, () => {
-      render(<CustomerForm />);
+  describe('validation', () => {
+    const itInvalidatesFieldWithValue = (
+      fieldName,
+      value,
+      description
+    ) => {
+      it(`displays error after blur when ${fieldName} field is '${value}'`, () => {
+        render(<CustomerForm {...validCustomer} />);
 
-      blur(
-        field('customer', fieldName),
-        withEvent(fieldName, value)
-      );
+        blur(
+          field('customer', fieldName),
+          withEvent(fieldName, value)
+        );
 
-      expect(element('.error')).not.toBeNull();
-      expect(element('.error').textContent).toMatch(
-        description
-      );
-    });
-  };
+        expect(element('.error')).not.toBeNull();
+        expect(element('.error').textContent).toMatch(description);
+      });
+    };
 
-  itInvalidatesFieldWithValue(
-    'firstName',
-    ' ',
-    'First name is required'
-  );
+    const itClearsFieldError = (fieldName, fieldValue) => {
+      it(`clears error when user corrects it`, async () => {
+        render(<CustomerForm {...validCustomer} />);
 
-  itInvalidatesFieldWithValue(
-    'lastName',
-    ' ',
-    'Last name is required'
-  );
+        blur(
+          field('customer', fieldName),
+          withEvent(fieldName, '')
+        );
+        change(
+          field('customer', fieldName),
+          withEvent(fieldName, fieldValue)
+        );
 
-  itInvalidatesFieldWithValue(
-    'phoneNumber',
-    ' ',
-    'Phone number is required'
-  );
+        expect(element('.error')).toBeNull();
+      });
+    };
 
-  itInvalidatesFieldWithValue(
-    'phoneNumber',
-    'invalid',
-    'Only numbers, spaces and these symbols are allowed: ( ) + -'
-  );
+    const itDoesNotInvalidateFieldOnKeypress = (
+      fieldName,
+      fieldValue
+    ) => {
+      it(`does not validate field on keypress`, async () => {
+        render(<CustomerForm {...validCustomer} />);
 
-  it('accepts standard phone number characters when validating', () => {
-    render(<CustomerForm />);
+        change(
+          field('customer', fieldName),
+          withEvent(fieldName, fieldValue)
+        );
 
-    blur(
-      element('[name="phoneNumber"'),
-      withEvent('phoneNumber', '0123456789+()- ')
+        expect(element('.error')).toBeNull();
+      });
+    };
+
+    itInvalidatesFieldWithValue(
+      'firstName',
+      ' ',
+      'First name is required'
+    );
+    itInvalidatesFieldWithValue(
+      'lastName',
+      ' ',
+      'Last name is required'
+    );
+    itInvalidatesFieldWithValue(
+      'phoneNumber',
+      ' ',
+      'Phone number is required'
+    );
+    itInvalidatesFieldWithValue(
+      'phoneNumber',
+      'invalid',
+      'Only numbers, spaces and these symbols are allowed: ( ) + -'
     );
 
-    expect(element('.error')).toBeNull();
-  });
+    itClearsFieldError('firstName', 'name');
+    itClearsFieldError('lastName', 'name');
+    itClearsFieldError('phoneNumber', '1234567890');
 
-  it('displays indicator when the form is submitting', async () => {
-    render(<CustomerForm {...validCustomer} />);
-    act(() => {
-      ReactTestUtils.Simulate.submit(form('customer'));
+    itDoesNotInvalidateFieldOnKeypress('firstName', '');
+    itDoesNotInvalidateFieldOnKeypress('lastName', '');
+    itDoesNotInvalidateFieldOnKeypress('phoneNumber', '');
+
+    it('accepts standard phone number characters when validating', () => {
+      render(<CustomerForm {...validCustomer} />);
+
+      blur(
+        element("[name='phoneNumber']"),
+        withEvent('phoneNumber', '0123456789+()- ')
+      );
+
+      expect(element('.error')).toBeNull();
     });
-    await act(async () => {
-      expect(element('span.submittingIndicator')).not.toBeNull();
-    });
   });
-
-  it('initially does not display the submitting indicator', () => {
-    render(<CustomerForm {...validCustomer} />);
-    expect(element('.submittingIndicator')).toBeNull();
-  });
-
-  it('hides indicator when form has submitted', async () => {
-    render(<CustomerForm {...validCustomer} />);
-    await submit(form('customer'));
-    expect(element('.submittingIndicator')).toBeNull();
-  });
-
 });
