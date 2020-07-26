@@ -16,8 +16,10 @@ const twoCustomers = [
 
 const tenCustomers = Array.from('0123456789', id => ({ id }));
 
+const anotherTenCustomers = Array.from('ABCDEFGHIJ', id => ({ id }));
+
 describe('CustomerSearch', () => {
-  let renderAndWait, container, element, elements, clickAndWait;
+  let renderAndWait, container, element, elements, clickAndWait, changeAndWait;
 
   beforeEach(() => {
     ({
@@ -25,7 +27,8 @@ describe('CustomerSearch', () => {
       container,
       element,
       elements,
-      clickAndWait
+      clickAndWait,
+      changeAndWait
     } = createContainer());
     jest
       .spyOn(window, 'fetch')
@@ -109,7 +112,68 @@ describe('CustomerSearch', () => {
     );
   });
 
+  it('moves back one page when clicking previous after multiple clicks of the next button', async () => {
+    window.fetch
+      .mockReturnValueOnce(fetchResponseOk(tenCustomers))
+      .mockReturnValue(fetchResponseOk(anotherTenCustomers));
+    await renderAndWait(<CustomerSearch />);
+    await clickAndWait(element('button#next-page'));
+    await clickAndWait(element('button#next-page'));
+    await clickAndWait(element('button#previous-page'));
+    expect(window.fetch).toHaveBeenLastCalledWith(
+      '/customers?after=9',
+      expect.anything()
+    );
+  });
 
+  it('moves back multiple pages', async () => {
+    window.fetch
+      .mockReturnValueOnce(fetchResponseOk(tenCustomers))
+      .mockReturnValue(fetchResponseOk(anotherTenCustomers));
+    await renderAndWait(<CustomerSearch />);
+    await clickAndWait(element('button#next-page'));
+    await clickAndWait(element('button#next-page'));
+    await clickAndWait(element('button#previous-page'));
+    await clickAndWait(element('button#previous-page'));
+    expect(window.fetch).toHaveBeenLastCalledWith(
+      '/customers',
+      expect.anything()
+    );
+  });
+
+  it('has a search input field with a placeholder', async () => {
+    await renderAndWait(<CustomerSearch />);
+    expect(element('input')).not.toBeNull();
+    expect(element('input').getAttribute('placeholder')).toEqual(
+      'Enter filter text'
+    );
+  });
+
+  it('performs search when search term is changed', async () => {
+    await renderAndWait(<CustomerSearch />);
+    await changeAndWait(
+      element('input'),
+      withEvent('input', 'name')
+    );
+    expect(window.fetch).toHaveBeenLastCalledWith(
+      '/customers?searchTerm=name',
+      expect.anything()
+    );
+  });
+
+  it('includes search term when moving to next page', async () => {
+    window.fetch.mockReturnValue(fetchResponseOk(tenCustomers));
+    await renderAndWait(<CustomerSearch />);
+    await changeAndWait(
+      element('input'),
+      withEvent('input', 'name')
+    );
+    await clickAndWait(element('button#next-page'));
+    expect(window.fetch).toHaveBeenLastCalledWith(
+      '/customers?after=9&searchTerm=name',
+      expect.anything()
+    );
+  });
 
 
 });
