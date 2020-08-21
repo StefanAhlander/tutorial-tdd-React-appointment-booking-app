@@ -2,8 +2,7 @@ import React from 'react';
 import 'whatwg-fetch';
 import { createContainer, withEvent } from './domManipulators';
 import { CustomerSearch } from '../src/CustomerSearch';
-import { fetchResponseOk, fetchResponseError } from './spyHelpers';
-import { render } from 'react-dom';
+import { fetchResponseOk } from './spyHelpers';
 
 const oneCustomer = [
   { id: 1, firstName: 'A', lastName: 'B', phoneNumber: '1' }
@@ -16,7 +15,9 @@ const twoCustomers = [
 
 const tenCustomers = Array.from('0123456789', id => ({ id }));
 
-const anotherTenCustomers = Array.from('ABCDEFGHIJ', id => ({ id }));
+const anotherTenCustomers = Array.from('ABCDEFGHIJ', id => ({
+  id
+}));
 
 describe('CustomerSearch', () => {
   let renderAndWait, container, element, elements, clickAndWait, changeAndWait;
@@ -39,7 +40,10 @@ describe('CustomerSearch', () => {
     await renderAndWait(<CustomerSearch />);
     const headings = elements('table th');
     expect(headings.map(h => h.textContent)).toEqual([
-      'First name', 'Last name', 'Phone number', 'Actions'
+      'First name',
+      'Last name',
+      'Phone number',
+      'Actions'
     ]);
   });
 
@@ -48,19 +52,17 @@ describe('CustomerSearch', () => {
     expect(window.fetch).toHaveBeenCalledWith('/customers', {
       method: 'GET',
       credentials: 'same-origin',
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers: { 'Content-Type': 'application/json' }
     });
   });
 
   it('renders all customer data in a table row', async () => {
     window.fetch.mockReturnValue(fetchResponseOk(oneCustomer));
     await renderAndWait(<CustomerSearch />);
-    const rows = elements('table tbody td');
-    expect(rows[0].textContent).toEqual('A');
-    expect(rows[1].textContent).toEqual('B');
-    expect(rows[2].textContent).toEqual('1');
+    const columns = elements('table > tbody > tr > td');
+    expect(columns[0].textContent).toEqual('A');
+    expect(columns[1].textContent).toEqual('B');
+    expect(columns[2].textContent).toEqual('1');
   });
 
   it('renders multiple customer rows', async () => {
@@ -151,10 +153,7 @@ describe('CustomerSearch', () => {
 
   it('performs search when search term is changed', async () => {
     await renderAndWait(<CustomerSearch />);
-    await changeAndWait(
-      element('input'),
-      withEvent('input', 'name')
-    );
+    await changeAndWait(element('input'), withEvent('input', 'name'));
     expect(window.fetch).toHaveBeenLastCalledWith(
       '/customers?searchTerm=name',
       expect.anything()
@@ -164,16 +163,11 @@ describe('CustomerSearch', () => {
   it('includes search term when moving to next page', async () => {
     window.fetch.mockReturnValue(fetchResponseOk(tenCustomers));
     await renderAndWait(<CustomerSearch />);
-    await changeAndWait(
-      element('input'),
-      withEvent('input', 'name')
-    );
+    await changeAndWait(element('input'), withEvent('input', 'name'));
     await clickAndWait(element('button#next-page'));
     expect(window.fetch).toHaveBeenLastCalledWith(
       '/customers?after=9&searchTerm=name',
       expect.anything()
     );
   });
-
-
 });
